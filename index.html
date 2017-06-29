@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<meta http-equiv="X-UA-Compatible" content="ie=edge">
+	<title>閒聊室</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<link rel="stylesheet" href="www/css/style.css">
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+</head>
+
+<body>
+	<div class="container">
+		<div id="nickWrap">
+			<form id="setNick" role="form">
+				<h2 class="form-signin-heading">請輸入您的名字:</h2>
+				<div style="margin:10px;">
+					<input size="35" id="txtNickname" required="" />
+				</div>
+				<input type="Submit" class="btn btn-lg btn-primary">
+			</form>
+		</div>
+
+
+		<div id="contentWrap">
+			<div id="chatWrap" class="panel panel-default">
+				<div class="panel-heading">即時聊天</div>
+				<div class="panel-body">
+					<div class="row">
+						<div class="col-md-9">
+							<div id="chat"></div>
+							<form id="send-message">
+								<div class="input-group">
+									<input type="text" class="form-control" placeholder="請輸入聊天訊息..." id="message">
+									<span class="input-group-btn">
+						          <button type="submit" class="btn btn-primary">送出留言</button>
+						        </span>
+								</div>
+							</form>
+						</div>
+						<div class="col-md-3">
+							線上名單：
+							<div id="users"></div>
+						</div>
+					</div>
+				</div>
+			</div>
+
+		</div>
+
+		<script type="text/javascript" src="https://code.jquery.com/jquery-latest.min.js"></script>
+		<script type="text/javascript" src="/socket.io/socket.io.js"></script>
+		<script type="text/javascript">
+			$(function () {
+				$('#contentWrap').hide();
+				var socket = io.connect();
+				var $frmMessage = $('#send-message');
+				var $frmNick = $('#setNick');
+				var $nickBox = $('#txtNickname');
+				var $boxMessage = $('#message');
+				var $chat = $('#chat');
+
+
+				$frmNick.submit(function (e) {
+					console.log($nickBox.val());
+					console.log('hi, frmNick');
+					e.preventDefault();
+
+					socket.emit('new user', $nickBox.val());
+
+					$nickBox.val('');
+
+					$('#nickWrap').hide();
+					$('#contentWrap').show();
+					$chat.css('height', '400px');
+					$('contentWrap').css('padding-top', '20px');
+
+				});
+
+				$frmMessage.submit(function (e) {
+					e.preventDefault();
+					socket.emit('send message', $boxMessage.val().trim());
+					$boxMessage.val('');
+				});
+
+				socket.on('usernames', function (data) {
+					var sb = '';
+					for (var d = 0; d < data.length; d++) {
+						console.log(data[d]);
+						sb += data[d] + "<br />";
+					}
+					$('div#users').html(sb);
+
+				});
+
+				socket.on('chat', function (server, msg) {
+
+					var now = new Date();
+					var datetime = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
+					datetime += ' ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+
+					$chat.append("<br /><i>系統訊息: <b>[ " + msg + " ]</b> (" +
+						datetime + ")</i><br />");
+				});
+
+				socket.on('new message', function (data) {
+					var msg = data.msg;
+					var name = data.nick;
+
+					var now = new Date();
+					var datetime = now.getFullYear() + '/' + (now.getMonth() + 1) + '/' + now.getDate();
+					datetime += ' ' + now.getHours() + ':' + now.getMinutes() + ':' + now.getSeconds();
+
+					$chat.append("<b>" + name + " </b>: " + msg + " (<i>" + datetime + "<i>)<br />");
+				});
+			});
+		</script>
+	</div>
+</body>
+
+</html>
